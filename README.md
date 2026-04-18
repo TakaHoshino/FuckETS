@@ -17,7 +17,7 @@
 首先，在电脑版的E听说上下载要解析的试题
 然后打开命令提示符，输入以下命令：  
 `
-cd main.py所在的目录
+cd main.py所在的目录  
 python main.py
 `  
 如果电脑未安装Python，也可下载并使用Releases中的文件
