@@ -199,7 +199,7 @@ class EtsParserApp:
             return
 
         if len(matches) < 3:
-            output_lines.append(f"警告：只找到 {len(matches)} 个 content_XXXXXX 文件夹，期望 3 个")
+            output_lines.append(f"警告：只找到 {len(matches)} 个子文件夹，期望 3 个")
         matches.sort(key=lambda x: x[0])
 
         part_parsers = [
@@ -217,7 +217,7 @@ class EtsParserApp:
                     continue
                 parser_fn(json_file, output_lines)
             else:
-                output_lines.append(f"\n【{part_name}】 未找到对应的 content_XXXXXX 文件夹")
+                output_lines.append(f"\n【{part_name}】 未找到对应的子文件夹")
 
         complete_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         output_lines.append(f"\n[完成] 解析完成时间：{complete_time}")
