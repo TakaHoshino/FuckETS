@@ -23,6 +23,10 @@ python main.py
 ```
 如果电脑未安装Python，也可下载并使用Releases中的文件
 
+## 软件截图
+
+![Screenshot](./Screenshots/Screenshot_1.png)
+
 ## 注意事项
 
 本项目目前仅测试了**广东地区**的试题
@@ -31,7 +35,7 @@ python main.py
 
 ## 项目结构
 ```
-FuckETS/
+FuckETS
 ├── main.py            # 程序入口
 ├── app.py             # GUI 主窗口
 ├── parser.py          # JSON 解析逻辑
