@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 from utils import strip_html_tags, format_text_with_paragraphs
@@ -10,6 +11,7 @@ def parse_part_a(json_path: Path, output_lines: list):
             data = json.load(f)
         raw_value = data['info']['value']
         clean_text = format_text_with_paragraphs(raw_value)
+        clean_text = re.sub(r'<[^>]+>', '\n', clean_text)
         output_lines.append(clean_text)
     except Exception as e:
         output_lines.append(f"[PartA 解析错误] {e}")
@@ -49,6 +51,7 @@ def parse_part_c(json_path: Path, output_lines: list):
             data = json.load(f)
         raw_value = data['info']['value']
         clean_text = format_text_with_paragraphs(raw_value)
+        clean_text = re.sub(r'<[^>]+>', '\n', clean_text)
         output_lines.append(clean_text)
     except Exception as e:
         output_lines.append(f"[PartC 解析错误] {e}")
