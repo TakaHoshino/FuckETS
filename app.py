@@ -207,10 +207,16 @@ class EtsParserApp:
             ('PartB', parse_part_b),
             ('PartC', parse_part_c),
         ]
+
+        part_type = {
+            "PartA":"模仿朗读",
+            "PartB":"角色扮演",
+            "PartC":"故事复述",
+        }
         for idx, (part_name, parser_fn) in enumerate(part_parsers):
             if idx < len(matches):
                 folder = matches[idx][1]
-                output_lines.append(f"\n【{part_name}】 子文件夹：{folder.name}")
+                output_lines.append(f"\n【{part_name}】 {part_type[part_name]}")
                 json_file = folder / "content.json"
                 if not json_file.exists():
                     output_lines.append(f"错误：未找到 {json_file}")
