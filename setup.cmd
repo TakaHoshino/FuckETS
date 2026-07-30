@@ -23,5 +23,8 @@ if errorlevel 1 (
 if exist "build"           rmdir /s /q "build"
 if exist "FuckETS.spec" del /q "FuckETS.spec"
 
-explorer dist
+if exist "FuckETS.zip" del /q "FuckETS.zip"
+powershell -NoProfile -Command "Compress-Archive -Path 'dist\FuckETS\*' -DestinationPath 'FuckETS.zip' -Force"
+
+rem explorer dist
 endlocal
