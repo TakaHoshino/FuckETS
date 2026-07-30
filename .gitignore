@@ -1,4 +1,5 @@
 # .gitignore
+.mimocode/
 .venv/
 .idea/
 dist/
