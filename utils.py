@@ -10,7 +10,7 @@ from datetime import datetime
 def strip_html_tags(text: str) -> str:
     if not isinstance(text, str):
         return text
-    clean = re.compile('<.*?>')
+    clean = re.compile(r'<[^>]+>')
     return re.sub(clean, '', text)
 
 
@@ -21,7 +21,7 @@ def split_html_paragraphs(html_text: str) -> list:
     paragraphs = re.findall(r'<p>(.*?)</p>', html_text, re.DOTALL)
     if not paragraphs:
         return [html_text]
-    clean = re.compile('<.*?>')
+    clean = re.compile(r'<[^>]+>')
     return [re.sub(clean, '', p).strip() for p in paragraphs if p.strip()]
 
 

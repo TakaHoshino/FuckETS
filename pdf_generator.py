@@ -19,20 +19,19 @@ except ImportError:
 from utils import find_chinese_font, classify_line
 
 
-def generate_pdf(output_text: str, filename: str) -> bool:
-    """将文本内容渲染为带样式的 PDF，返回是否成功。"""
+def generate_pdf(output_text: str, filename: str) -> tuple[bool, str]:
+    """将文本内容渲染为带样式的 PDF，返回 (是否成功, 错误信息)。"""
     if not REPORTLAB_AVAILABLE:
-        return False
+        return False, "未安装 reportlab 库"
 
     font_path = find_chinese_font()
-    if font_path:
-        try:
-            pdfmetrics.registerFont(TTFont('ChineseFont', font_path))
-            font_name = 'ChineseFont'
-        except Exception:
-            font_name = "Helvetica"
-    else:
-        font_name = "Helvetica"
+    if not font_path:
+        return False, "未找到中文字体文件，无法生成 PDF"
+    try:
+        pdfmetrics.registerFont(TTFont('ChineseFont', font_path))
+        font_name = 'ChineseFont'
+    except Exception:
+        return False, f"加载中文字体失败: {font_path}"
 
     doc = SimpleDocTemplate(
         filename,
@@ -84,6 +83,10 @@ def generate_pdf(output_text: str, filename: str) -> bool:
         'normal': style_normal,
     }
 
+    def escape_for_reportlab(text: str) -> str:
+        """转义 XML 特殊字符，同时将换行符转换为 <br/> 供 ReportLab 渲染。"""
+        return saxutils.escape(text).replace('\n', '<br/>')
+
     story = []
     for line in output_text.splitlines():
         stripped = line.strip()
@@ -92,13 +95,11 @@ def generate_pdf(output_text: str, filename: str) -> bool:
             continue
 
         category = classify_line(line)
-        escaped_line = saxutils.escape(line).replace('\n', '<br/>')
-        story.append(Paragraph(escaped_line, style_map.get(category, style_normal)))
+        story.append(Paragraph(escape_for_reportlab(line), style_map.get(category, style_normal)))
         story.append(Spacer(1, 2))
 
     try:
         doc.build(story)
-        return True
+        return True, ""
     except Exception as e:
-        print(f"PDF 生成错误：{e}")
-        return False
+        return False, f"PDF 生成错误：{e}"

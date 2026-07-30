@@ -21,6 +21,7 @@ class EtsParserApp:
 
         self.folders: list = []
         self.selected_folder: Path | None = None
+        self._output_lock = threading.Lock()
         self.current_output: str = ""
 
         self.create_widgets()
@@ -238,7 +239,8 @@ class EtsParserApp:
         self._update_result(output_lines, folder_name)
 
     def _update_result(self, output_lines: list[str], folder_name: str):
-        self.current_output = "\n".join(output_lines)
+        with self._output_lock:
+            self.current_output = "\n".join(output_lines)
 
         def update_gui():
             self.result_text.delete(1.0, tk.END)
@@ -267,7 +269,9 @@ class EtsParserApp:
     # 保存 PDF
     # ------------------------------------------------------------------
     def save_as_pdf(self):
-        if not self.current_output:
+        with self._output_lock:
+            output = self.current_output
+        if not output:
             messagebox.showwarning("警告", "没有可保存的内容，请先解析一个文件夹。")
             return
         if not REPORTLAB_AVAILABLE:
@@ -287,7 +291,7 @@ class EtsParserApp:
         self.root.update_idletasks()
 
         def generate():
-            success = generate_pdf(self.current_output, filename)
+            success, err_msg = generate_pdf(output, filename)
 
             def done():
                 if success:
@@ -295,7 +299,7 @@ class EtsParserApp:
                     messagebox.showinfo("成功", f"PDF 已保存至:\n{filename}")
                 else:
                     self.status_label.config(text="PDF 生成失败")
-                    messagebox.showerror("错误", "PDF 生成失败，请检查 reportlab 安装和字体配置。")
+                    messagebox.showerror("错误", f"PDF 生成失败：\n{err_msg}")
 
             self.root.after(0, done)
 
