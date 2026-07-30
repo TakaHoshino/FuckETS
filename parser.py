@@ -1,20 +1,24 @@
 import json
-import re
 from pathlib import Path
 
 from utils import strip_html_tags, format_text_with_paragraphs
 
 
-def parse_part_a(json_path: Path, output_lines: list):
+def _parse_content_value(json_path: Path, output_lines: list, part_label: str):
+    """解析 info.value 字段并格式化为可读文本（供 PartA / PartC 复用）。"""
     try:
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         raw_value = data['info']['value']
         clean_text = format_text_with_paragraphs(raw_value)
-        clean_text = re.sub(r'<[^>]+>', '\n', clean_text)
+        clean_text = strip_html_tags(clean_text)
         output_lines.append(clean_text)
     except Exception as e:
-        output_lines.append(f"[PartA 解析错误] {e}")
+        output_lines.append(f"[{part_label} 解析错误] {e}")
+
+
+def parse_part_a(json_path: Path, output_lines: list):
+    _parse_content_value(json_path, output_lines, "PartA")
 
 
 def parse_part_b(json_path: Path, output_lines: list):
@@ -46,12 +50,4 @@ def parse_part_b(json_path: Path, output_lines: list):
 
 
 def parse_part_c(json_path: Path, output_lines: list):
-    try:
-        with open(json_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        raw_value = data['info']['value']
-        clean_text = format_text_with_paragraphs(raw_value)
-        clean_text = re.sub(r'<[^>]+>', '\n', clean_text)
-        output_lines.append(clean_text)
-    except Exception as e:
-        output_lines.append(f"[PartC 解析错误] {e}")
+    _parse_content_value(json_path, output_lines, "PartC")

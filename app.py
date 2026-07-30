@@ -7,7 +7,7 @@ from datetime import datetime
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 
-from utils import get_creation_time
+from utils import get_creation_time, classify_line
 from parser import parse_part_a, parse_part_b, parse_part_c
 from pdf_generator import generate_pdf, REPORTLAB_AVAILABLE
 
@@ -157,10 +157,17 @@ class EtsParserApp:
             self.parse_btn.config(state=tk.DISABLED)
             return
 
-        folder_name = self.tree.item(selection[0], "values")[0]
-        self.selected_folder = next(
-            (path for name, path, _ in self.folders if name == folder_name), None
-        )
+        item = self.tree.item(selection[0])
+        folder_path_str = item['tags'][0] if item['tags'] else None
+        if folder_path_str:
+            self.selected_folder = Path(folder_path_str)
+        else:
+            # Fallback: 通过名称查找
+            folder_name = item["values"][0]
+            self.selected_folder = next(
+                (path for name, path, _ in self.folders if name == folder_name), None
+            )
+
         self.parse_btn.config(state=tk.NORMAL if self.selected_folder else tk.DISABLED)
 
     # ------------------------------------------------------------------
@@ -177,18 +184,19 @@ class EtsParserApp:
         self.status_label.config(text="解析中...")
         self.root.update_idletasks()
 
-        threading.Thread(target=self._parse_worker, daemon=True).start()
+        folder = self.selected_folder
+        threading.Thread(target=self._parse_worker, args=(folder,), daemon=True).start()
 
-    def _parse_worker(self):
+    def _parse_worker(self, folder: Path):
         output_lines: list[str] = []
-        folder_name = self.selected_folder.name
+        folder_name = folder.name
         output_lines.append(f"作业文件夹：{folder_name}")
 
         content_pattern = re.compile(r'^content_(\d+)$')
         matches: list[tuple[int, Path]] = []
 
         try:
-            for subdir in self.selected_folder.iterdir():
+            for subdir in folder.iterdir():
                 if subdir.is_dir():
                     m = content_pattern.match(subdir.name)
                     if m:
@@ -215,9 +223,9 @@ class EtsParserApp:
         }
         for idx, (part_name, parser_fn) in enumerate(part_parsers):
             if idx < len(matches):
-                folder = matches[idx][1]
+                subfolder = matches[idx][1]
                 output_lines.append(f"\n【{part_name}】 {part_type[part_name]}")
-                json_file = folder / "content.json"
+                json_file = subfolder / "content.json"
                 if not json_file.exists():
                     output_lines.append(f"错误：未找到 {json_file}")
                     continue
@@ -245,17 +253,7 @@ class EtsParserApp:
                     self.result_text.insert(tk.END, "\n", "normal")
                     continue
 
-                if re.match(r'^[\【\[]\s*Part[A-C]\s*[\】\]]', stripped) or re.match(r'^Part[A-C]\s*[：:]', stripped):
-                    tag = "part_heading"
-                elif re.match(r'^[\【\[]\s*问题\s*\d+\s*[\】\]]', stripped) or re.match(r'^问题\s*\d+\s*[：:]', stripped):
-                    tag = "question"
-                elif stripped.startswith("候选答案：") or re.match(r'^\s*\d+\.', stripped):
-                    tag = "answer_candidate"
-                elif stripped.startswith("[完成]") or stripped.startswith("警告：") or stripped.startswith("错误："):
-                    tag = "info"
-                else:
-                    tag = "normal"
-
+                tag = classify_line(line)
                 self.result_text.insert(tk.END, line + "\n", tag)
 
             self.result_text.see(tk.END)

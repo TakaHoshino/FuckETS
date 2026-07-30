@@ -53,3 +53,32 @@ def find_chinese_font() -> str | None:
         if os.path.exists(path):
             return path
     return None
+
+
+# ------------------------------------------------------------------
+# 行分类（app.py 与 pdf_generator.py 共用）
+# ------------------------------------------------------------------
+RE_PART_HEADING = re.compile(r'^[\【\[]\s*Part[A-C]\s*[\】\]]|^Part[A-C]\s*[：:]')
+RE_QUESTION     = re.compile(r'^[\【\[]\s*问题\s*\d+\s*[\】\]]|^问题\s*\d+\s*[：:]')
+RE_ANSWER_START = re.compile(r'^\s*\d+\.')
+
+
+def classify_line(line: str) -> str:
+    """将一行文本归类为样式标签。
+    返回: 'title' | 'part_heading' | 'question' | 'answer_candidate' | 'info' | 'normal'
+    """
+    stripped = line.strip()
+    if not stripped:
+        return 'normal'
+
+    if line.startswith("作业文件夹："):
+        return 'title'
+    if RE_PART_HEADING.match(stripped):
+        return 'part_heading'
+    if RE_QUESTION.match(stripped):
+        return 'question'
+    if stripped.startswith("候选答案：") or RE_ANSWER_START.match(stripped):
+        return 'answer_candidate'
+    if stripped.startswith("[完成]") or stripped.startswith("警告：") or stripped.startswith("错误："):
+        return 'info'
+    return 'normal'

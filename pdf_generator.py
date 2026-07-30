@@ -1,7 +1,7 @@
 """
 pdf_generator.py — 将解析结果输出为 PDF 文件
 """
-import re
+import xml.sax.saxutils as saxutils
 
 try:
     from reportlab.lib import colors
@@ -16,7 +16,7 @@ try:
 except ImportError:
     REPORTLAB_AVAILABLE = False
 
-from utils import find_chinese_font
+from utils import find_chinese_font, classify_line
 
 
 def generate_pdf(output_text: str, filename: str) -> bool:
@@ -75,6 +75,15 @@ def generate_pdf(output_text: str, filename: str) -> bool:
         textColor=colors.gray, alignment=TA_CENTER,
     )
 
+    style_map = {
+        'title': style_title,
+        'part_heading': style_part_heading,
+        'question': style_question,
+        'answer_candidate': style_answer,
+        'info': style_info,
+        'normal': style_normal,
+    }
+
     story = []
     for line in output_text.splitlines():
         stripped = line.strip()
@@ -82,19 +91,9 @@ def generate_pdf(output_text: str, filename: str) -> bool:
             story.append(Spacer(1, 4))
             continue
 
-        if line.startswith("作业文件夹："):
-            story.append(Paragraph(line, style_title))
-        elif re.match(r'^[\【\[]\s*Part[A-C]\s*[\】\]]', stripped) or re.match(r'^Part[A-C]\s*[：:]', stripped):
-            story.append(Paragraph(line, style_part_heading))
-        elif re.match(r'^[\【\[]\s*问题\s*\d+\s*[\】\]]', stripped) or re.match(r'^问题\s*\d+\s*[：:]', stripped):
-            story.append(Paragraph(line, style_question))
-        elif stripped.startswith("候选答案：") or re.match(r'^\s*\d+\.', stripped):
-            story.append(Paragraph(line, style_answer))
-        elif stripped.startswith("[完成]") or stripped.startswith("警告：") or stripped.startswith("错误："):
-            story.append(Paragraph(line, style_info))
-        else:
-            story.append(Paragraph(line, style_normal))
-
+        category = classify_line(line)
+        escaped_line = saxutils.escape(line).replace('\n', '<br/>')
+        story.append(Paragraph(escaped_line, style_map.get(category, style_normal)))
         story.append(Spacer(1, 2))
 
     try:
