@@ -82,7 +82,16 @@ public static class HomeworkTitleService
         {
             try
             {
-                var text = File.ReadAllText(logFile.FullName, System.Text.Encoding.UTF8);
+                // 以共享读方式打开：E听说 客户端可能正实时写入今天的日志文件，
+                // 独占读取（File.ReadAllText）会遇到文件锁，导致整份日志被跳过而取不到最新作业标题。
+                string text;
+                using (var stream = new FileStream(
+                    logFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var reader = new StreamReader(stream, System.Text.Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+                {
+                    text = reader.ReadToEnd();
+                }
+
                 foreach (var rawLine in text.Split('\n'))
                 {
                     var line = rawLine;
@@ -136,9 +145,10 @@ public static class HomeworkTitleService
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // 单个日志读取失败不影响整体
+                // 单个日志读取失败不影响整体，但记录以便排查
+                Logger.Warn($"读取 ETS 日志失败：{logFile.Name}（{ex.Message}）。");
             }
 
             if (neededIds is { Count: > 0 } && neededIds.IsSubsetOf(titles.Keys))
