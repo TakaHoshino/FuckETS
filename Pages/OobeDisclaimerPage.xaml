@@ -1,0 +1,36 @@
+<pages:OobePageBase x:Class="FuckETS.Pages.OobeDisclaimerPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:pages="clr-namespace:FuckETS.Pages">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 免责声明文本（可滚动，避免内容过长把按钮挤出可视区域） -->
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="4">
+            <StackPanel>
+                <TextBlock Text="免责声明" FontSize="16" FontWeight="Bold" Foreground="#2C3E50" Margin="0,0,0,10"/>
+                <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="22" Foreground="#333333">
+                    <Run Text="在使用本软件（FuckETS）之前，请仔细阅读以下条款：" FontWeight="Bold"/>
+                    <LineBreak/><LineBreak/>
+                    <Run Text="1. 本软件仅用于个人学习与研究目的。使用者应确保其使用方式符合所在地区法律法规及学校、教育机构的相关规定。"/>
+                    <LineBreak/><LineBreak/>
+                    <Run Text="2. 使用者使用本软件的行为及其产生的后果（包括但不限于学习成绩、考试结果、账号状态等）均由使用者本人自行承担。软件作者不对使用者因使用本软件而导致的任何直接或间接损失负责。"/>
+                    <LineBreak/><LineBreak/>
+                    <Run Text="3. 使用本软件获取参考答案可能导致学习效果下降、成绩下滑等风险。软件作者不对使用本软件所引发的学业、心理或其他方面的任何后果负责。"/>
+                    <LineBreak/><LineBreak/>
+                    <Run Text="4. 软件作者不对本软件的正确性、完整性、适用性及可正常运行作出任何保证。因软件缺陷、系统环境差异或其他原因造成的任何损失，软件作者不承担任何责任。"/>
+                    <LineBreak/><LineBreak/>
+                    <Run Text="5. 若您不同意上述条款，请立即停止使用本软件。" Foreground="#C0392B"/>
+                </TextBlock>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 同意按钮固定在页面底部，始终可见 -->
+        <Button x:Name="AgreeButton" Grid.Row="1" Content="同意（5 秒）" Width="160" Height="34"
+                HorizontalAlignment="Right" Margin="0,12,4,4" IsEnabled="False"
+                Click="AgreeButton_Click"/>
+    </Grid>
+</pages:OobePageBase>

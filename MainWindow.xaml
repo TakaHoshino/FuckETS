@@ -1,0 +1,71 @@
+<Window x:Class="FuckETS.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:FuckETS"
+        mc:Ignorable="d"
+        Title="FuckETS" Height="750" Width="950">
+    <Grid Margin="5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 顶部工具栏 -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,5">
+            <Button x:Name="ScanButton" Content="重新扫描" Padding="10,4" Margin="0,0,8,0" Click="ScanButton_Click"/>
+            <TextBlock x:Name="StatusLabel" Text="就绪" VerticalAlignment="Center" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <!-- 文件夹列表 -->
+        <GroupBox Grid.Row="1" Header="作业文件夹列表">
+            <Grid>
+                <DataGrid x:Name="FolderGrid"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          HeadersVisibility="Column"
+                          SelectionMode="Single"
+                          GridLinesVisibility="All"
+                          RowHeaderWidth="0"
+                          SelectionChanged="FolderGrid_SelectionChanged"
+                          Margin="4">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="文件夹名称" Binding="{Binding Name}" Width="130"/>
+                        <DataGridTextColumn Header="创建时间" Binding="{Binding CreationTime}" Width="150"/>
+                        <DataGridTextColumn Header="作业标题" Binding="{Binding HomeworkTitle}" Width="220" CanUserResize="True"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </GroupBox>
+
+        <!-- 操作按钮 -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,5">
+            <Button x:Name="ParseButton" Content="解析所选文件夹" Padding="10,4" Margin="0,0,8,0"
+                    IsEnabled="False" Click="ParseButton_Click"/>
+            <Button x:Name="SavePdfButton" Content="保存为 PDF" Padding="10,4" Margin="0,0,8,0"
+                    IsEnabled="False" Click="SavePdfButton_Click"/>
+            <Button x:Name="SettingsButton" Content="导出设置…" Padding="10,4"
+                    Click="SettingsButton_Click"/>
+        </StackPanel>
+
+        <!-- 结果区域 -->
+        <GroupBox Grid.Row="3" Header="解析结果">
+            <RichTextBox x:Name="ResultTextBox"
+                         IsReadOnly="True"
+                         VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Auto"
+                         FontFamily="Microsoft YaHei UI"
+                         FontSize="12"
+                         Background="#FEFEFE"
+                         AcceptsReturn="True"/>
+        </GroupBox>
+
+        <!-- 底部状态栏 -->
+        <TextBlock x:Name="BottomLabel" Grid.Row="4" Margin="0,5,0,0" TextWrapping="Wrap"
+                   VerticalAlignment="Center"/>
+    </Grid>
+</Window>

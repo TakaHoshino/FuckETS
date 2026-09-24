@@ -1,10 +1,40 @@
-# .gitignore
-.mimocode/
-.venv/
-.idea/
-dist/
-build/
-__pycache__/
+# Visual Studio / .NET
+.vs/
 .vscode/
-*.spec
-*.pyc
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# NuGet
+*.nupkg
+*.nupkg.metadata
+*.snupkg
+*.nuget.props
+*.nuget.targets
+src/packages/
+*.packages/
+
+# Publish
+publish/
+*.publish/
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+nxresult/
+*.coverage
+*.coveragexml

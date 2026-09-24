@@ -1,0 +1,31 @@
+<Window x:Class="FuckETS.PdfSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PDF 导出设置" Width="360" SizeToContent="Height"
+        ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="16" VerticalAlignment="Stretch">
+        <TextBlock Text="设置会持久化到 %APPDATA%\FuckETS\settings.json，下次启动自动加载。" FontSize="11" Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+        <TextBlock Text="正文字号 (pt)："/>
+        <TextBox x:Name="FontSizeBox" Margin="0,2,0,10" VerticalContentAlignment="Center"/>
+
+        <TextBlock Text="作业标题字号 (pt)："/>
+        <TextBox x:Name="TitleFontSizeBox" Margin="0,2,0,10" VerticalContentAlignment="Center"/>
+
+        <TextBlock Text="Part 标题字号 (pt)："/>
+        <TextBox x:Name="PartHeadingFontSizeBox" Margin="0,2,0,10" VerticalContentAlignment="Center"/>
+
+        <TextBlock Text="页边距 (mm)："/>
+        <TextBox x:Name="MarginBox" Margin="0,2,0,10" VerticalContentAlignment="Center"/>
+
+        <TextBlock Text="行间距 (倍率)："/>
+        <TextBox x:Name="LineHeightBox" Margin="0,2,0,10" VerticalContentAlignment="Center"/>
+
+        <CheckBox x:Name="BoldHeadingsCheck" Content="使用粗体标题" Margin="0,0,0,16"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+            <Button x:Name="OkButton" Content="确定" Width="80" Margin="0,0,8,0" Click="OkButton_Click" IsDefault="True"/>
+            <Button x:Name="CancelButton" Content="取消" Width="80" Click="CancelButton_Click" IsCancel="True"/>
+        </StackPanel>
+    </StackPanel>
+</Window>
