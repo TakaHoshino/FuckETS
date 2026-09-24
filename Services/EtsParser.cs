@@ -58,6 +58,9 @@ public static class EtsParser
         try
         {
             var cleanText = TextHelper.FormatTextWithParagraphs(value);
+            // 段落化可能因 <p> 标签不完整闭合而返回含标签的原文，这里务必再次剥离全部 HTML 标签，
+            // 确保输出不含 <p> / </p> 等多余标记。
+            cleanText = TextHelper.StripHtmlTags(cleanText).Trim();
             outputLines.Add(cleanText);
         }
         catch (Exception ex)

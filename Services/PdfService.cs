@@ -10,7 +10,11 @@ namespace FuckETS.Services;
 /// <summary>使用 QuestPDF 将解析结果渲染为 A4 PDF。</summary>
 public static class PdfService
 {
-    private const string ChineseFontName = "ChineseFont";
+    private const string TimesRomanFontName = "TimesNewRoman"; // 时代罗马体（字面名，用于拉丁/数字）
+    private const string ChineseFontName = "ChineseFont";      // 中文字体（用于汉字，回退用）
+
+    /// <summary>正文使用的字体回退列表：拉丁/数字优先时代罗马体，中文回退到中文字体。</summary>
+    private static readonly string[] BodyFontFamily = { TimesRomanFontName, ChineseFontName };
 
     /// <summary>生成 PDF，返回 (是否成功, 错误信息)。使用默认导出配置。</summary>
     public static (bool Success, string ErrorMessage) Generate(string outputText, string filename)
@@ -20,8 +24,8 @@ public static class PdfService
     public static (bool Success, string ErrorMessage) Generate(string outputText, string filename, PdfExportOptions options)
     {
         Logger.Debug($"开始生成 PDF：{filename}");
-        var fontPath = SystemHelper.FindChineseFont();
-        if (fontPath is null)
+        var chineseFontPath = SystemHelper.FindChineseFont();
+        if (chineseFontPath is null)
         {
             Logger.Error("未找到中文字体，无法生成 PDF。");
             return (false, "未找到中文字体文件，无法生成 PDF");
@@ -29,15 +33,35 @@ public static class PdfService
 
         QuestPDF.Settings.License = LicenseType.Community;
 
+        // 注册时代罗马体（Times New Roman）作为拉丁/数字字形；找不到则回退，仅用中文字体。
+        var timesPath = SystemHelper.FindSystemFont("times.ttf")
+                     ?? SystemHelper.FindSystemFont("timesbd.ttf");
         try
         {
-            using var fontStream = File.OpenRead(fontPath);
+            if (timesPath is not null)
+            {
+                using var timesStream = File.OpenRead(timesPath);
+                FontManager.RegisterFontWithCustomName(TimesRomanFontName, timesStream);
+            }
+            else
+            {
+                Logger.Warn("未找到时代罗马体（Times New Roman），改用中文字体渲染全文。");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"加载时代罗马体失败：{timesPath}（{ex.Message}），改用中文字体渲染全文。");
+        }
+
+        try
+        {
+            using var fontStream = File.OpenRead(chineseFontPath);
             FontManager.RegisterFontWithCustomName(ChineseFontName, fontStream);
         }
         catch (Exception ex)
         {
-            Logger.Error($"加载中文字体失败：{fontPath}", ex);
-            return (false, $"加载中文字体失败: {fontPath}\n{ex.Message}");
+            Logger.Error($"加载中文字体失败：{chineseFontPath}", ex);
+            return (false, $"加载中文字体失败: {chineseFontPath}\n{ex.Message}");
         }
 
         // 将输出打包为 (文本, 分类) 行列表，空行也保留以维持间距。
@@ -64,7 +88,7 @@ public static class PdfService
                     page.Size(PageSizes.A4);
                     page.Margin(marginMm, Unit.Millimetre);
                     page.DefaultTextStyle(t => t
-                        .FontFamily(ChineseFontName)
+                        .FontFamily(BodyFontFamily)
                         .FontSize(bodyFontSize)
                         .LineHeight(lineHeight));
 
@@ -83,36 +107,36 @@ public static class PdfService
                             {
                                 case LineClassifier.Category.Title:
                                     var titleText = item.Text(entry.Text)
-                                        .FontFamily(ChineseFontName).FontSize(titleFontSize)
+                                        .FontFamily(BodyFontFamily).FontSize(titleFontSize)
                                         .FontColor(Colors.BlueGrey.Darken3);
                                     if (boldHeadings)
                                         titleText.Bold();
                                     break;
                                 case LineClassifier.Category.PartHeading:
                                     var partText = item.Text(entry.Text)
-                                        .FontFamily(ChineseFontName).FontSize(partHeadingFontSize)
+                                        .FontFamily(BodyFontFamily).FontSize(partHeadingFontSize)
                                         .FontColor(Colors.Blue.Medium);
                                     if (boldHeadings)
                                         partText.Bold();
                                     break;
                                 case LineClassifier.Category.Question:
                                     item.PaddingLeft(20).Text(entry.Text)
-                                        .FontFamily(ChineseFontName).FontSize(bodyFontSize).Bold()
+                                        .FontFamily(BodyFontFamily).FontSize(bodyFontSize).Bold()
                                         .FontColor(Colors.Red.Medium);
                                     break;
                                 case LineClassifier.Category.AnswerCandidate:
                                     item.PaddingLeft(40).Text(entry.Text)
-                                        .FontFamily(ChineseFontName).FontSize(bodyFontSize)
+                                        .FontFamily(BodyFontFamily).FontSize(bodyFontSize)
                                         .FontColor(Colors.Green.Medium);
                                     break;
                                 case LineClassifier.Category.Info:
                                     item.Text(entry.Text)
-                                        .FontFamily(ChineseFontName).FontSize(infoFontSize)
+                                        .FontFamily(BodyFontFamily).FontSize(infoFontSize)
                                         .FontColor(Colors.Grey.Medium);
                                     break;
                                 default:
                                     item.PaddingLeft(20).Text(entry.Text)
-                                        .FontFamily(ChineseFontName).FontSize(bodyFontSize);
+                                        .FontFamily(BodyFontFamily).FontSize(bodyFontSize);
                                     break;
                             }
                         }

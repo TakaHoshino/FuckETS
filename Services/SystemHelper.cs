@@ -5,6 +5,14 @@ namespace FuckETS.Services;
 /// <summary>系统相关工具：中文字体查找与目录创建时间。</summary>
 public static class SystemHelper
 {
+    /// <summary>在系统字体目录中查找指定名称的字体文件；找不到返回 null。</summary>
+    public static string? FindSystemFont(string fileName)
+    {
+        var fontDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Fonts");
+        var path = Path.Combine(fontDir, fileName);
+        return File.Exists(path) ? path : null;
+    }
+
     /// <summary>查找可用的中文字体文件，按优先级返回第一个存在的路径。</summary>
     public static string? FindChineseFont()
     {
