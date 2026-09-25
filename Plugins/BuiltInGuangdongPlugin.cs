@@ -201,13 +201,15 @@ public sealed class BuiltInGuangdongPlugin : IParserPlugin
         catch { return withoutTags; }
     }
 
-    /// <summary>按 &lt;p&gt; 标签拆段；无闭合对时退回整段（剥标签、解码实体）。</summary>
+    /// <summary>按 &lt;p&gt; 标签拆段；末段可缺闭合标签（尾段一并捕获）；无任何段时退回整段（剥标签、解码实体）。</summary>
     private static List<string> SplitHtmlParagraphs(string? htmlText)
     {
         if (string.IsNullOrEmpty(htmlText))
             return [];
 
-        var paragraphs = Regex.Matches(htmlText, @"<p>(.*?)</p>", RegexOptions.Singleline)
+        // 除标准 <p>…</p> 外，兼容末段缺 </p> 的数据（如 40888/content_121727），
+        // 否则最后一个未闭合段落会被静默丢弃，导致解析结果不完整
+        var paragraphs = Regex.Matches(htmlText, @"<p>(.*?)(?:</p>|$)", RegexOptions.Singleline)
             .Select(m => m.Groups[1].Value)
             .Where(p => !string.IsNullOrWhiteSpace(p))
             .Select(p => StripHtmlTags(p).Trim())
