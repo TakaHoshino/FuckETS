@@ -88,3 +88,35 @@ public sealed class PdfExportOption
     public string Key { get; set; } = string.Empty;
     public object? Value { get; set; }
 }
+
+/// <summary>
+/// 主界面工具栏扩展钩子上下文：插件通过 <see cref="AddButton"/> 追加自定义按钮，
+/// 主程序读取 <see cref="Buttons"/> 实例化为工具栏按钮（插件因此无需依赖 WPF）。
+/// </summary>
+public sealed class MainWindowToolbarContext : HookContext
+{
+    private readonly List<ToolbarButtonInfo> _buttons = new();
+
+    /// <summary>插件追加的按钮列表（主程序读取并实例化为工具栏按钮）。</summary>
+    public IReadOnlyList<ToolbarButtonInfo> Buttons => _buttons;
+
+    /// <summary>由主程序在投递钩子前注入：在 UI 线程弹出信息框（参数：标题、内容）。插件在按钮回调中调用。</summary>
+    public Action<string, string>? ShowMessage { get; set; }
+
+    /// <summary>追加一个工具栏按钮；onClick 由主程序保证在 UI 线程执行。</summary>
+    public void AddButton(string text, Action onClick, string? toolTip = null)
+        => _buttons.Add(new ToolbarButtonInfo { Text = text, Clicked = onClick, ToolTip = toolTip });
+}
+
+/// <summary>插件贡献的工具栏按钮描述。</summary>
+public sealed class ToolbarButtonInfo
+{
+    /// <summary>按钮文本。</summary>
+    public string Text { get; set; } = string.Empty;
+
+    /// <summary>点击回调（主程序保证在 UI 线程调用）。</summary>
+    public Action? Clicked { get; set; }
+
+    /// <summary>悬浮提示（可选）。</summary>
+    public string? ToolTip { get; set; }
+}

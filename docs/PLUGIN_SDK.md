@@ -39,7 +39,7 @@ scripts\pack_fep.ps1 -ProjectDir path\to\YourPlugin
 4. 主界面「插件管理…」→「加载 .fep 插件…」安装；或把 `.fep` 放入程序目录 `plugins\` 后重启。
 5. 解析插件还会出现在主界面「解析插件」下拉框中供切换。
 
-可参考完整示例：`examples/HelloBehaviorPlugin`（行为）与 `examples/DemoParserPlugin`（解析）。
+可参考完整示例：`examples/HelloBehaviorPlugin` 与 `examples/ToolbarDemoPlugin`（行为）以及 `examples/DemoParserPlugin`（解析）。
 
 ## plugin.json 清单
 
@@ -150,6 +150,7 @@ public interface IParserPlugin : IPlugin
 | `parse.completed` | `ParseCompletedContext` | 全部解析完成后，可改写 `OutputLines` |
 | `ui.result.displaying` | `ParseResultDisplayingContext` | 结果展示前，可改写展示行 |
 | `ui.pdf.exporting` | `PdfExportingContext` | PDF 导出前，可改 `OutputText` / `FileName` / `Options`（键：`fontSize`、`titleFontSize`、`partHeadingFontSize`、`marginMm`、`lineHeight`、`boldHeadings`） |
+| `ui.mainWindow.toolbar` | `MainWindowToolbarContext` | 主界面构建时；`AddButton` 追加工具栏按钮，`ShowMessage` 弹出信息框；插件启停时会重新投递以重建按钮 |
 
 注意：解析流程钩子可能在**后台线程**触发，处理器须自行保证线程安全；界面钩子在 UI 线程。
 
@@ -179,6 +180,7 @@ your.plugin.id.fep
 | 示例 | 类型 | 演示内容 |
 | --- | --- | --- |
 | `examples/HelloBehaviorPlugin` | 行为 | 启用后每次解析在结果末尾追加 `[示例插件] …` 标记行；禁用即消失——用于验证钩子生效 |
+| `examples/ToolbarDemoPlugin` | 行为 | 主界面工具栏显示「示例插件」按钮，点击弹出信息框（标题「示例插件」、内容「FuckETS 示例行为插件」）；用于验证 UI 扩展钩子与启停时按钮重建 |
 | `examples/DemoParserPlugin` | 解析 | 全部 content 目录归入 PartA 并输出占位内容；用于验证解析插件切换与调度 |
 
 打包并加载后可在「插件管理」中切换启用状态直观验证。

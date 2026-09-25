@@ -28,8 +28,13 @@ public partial class MainWindow : Window
         InitializeComponent();
         _pdfOptions = PdfSettingsService.Load();
         PluginHost.EnsureInitialized();
-        PluginHost.Current.PluginsChanged += (_, _) => Dispatcher.Invoke(RefreshParserComboBox);
+        PluginHost.Current.PluginsChanged += (_, _) => Dispatcher.Invoke(() =>
+        {
+            RefreshParserComboBox();
+            BuildPluginToolbar();
+        });
         RefreshParserComboBox();
+        BuildPluginToolbar();
         Closed += (_, _) => Application.Current.Shutdown();
         Loaded += async (_, _) => await ScanFoldersAsync();
     }
@@ -95,6 +100,37 @@ public partial class MainWindow : Window
         var dialog = new PluginManagerWindow { Owner = this };
         dialog.ShowDialog();
         RefreshParserComboBox();
+    }
+
+    /// <summary>投递 ui.mainWindow.toolbar 钩子，把插件贡献的按钮实例化到主界面工具栏。</summary>
+    private void BuildPluginToolbar()
+    {
+        PluginToolbarPanel.Children.Clear();
+
+        var ctx = new MainWindowToolbarContext
+        {
+            ShowMessage = (title, content) =>
+                MessageBox.Show(this, content, title, MessageBoxButton.OK, MessageBoxImage.Information),
+        };
+        PluginHost.Current.Publish(HookNames.MainWindowToolbar, ctx);
+
+        foreach (var spec in ctx.Buttons)
+        {
+            var button = new System.Windows.Controls.Button
+            {
+                Content = spec.Text,
+                Padding = new Thickness(10, 4, 0, 4),
+                Margin = new Thickness(0, 0, 8, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                ToolTip = spec.ToolTip,
+            };
+            var onClick = spec.Clicked;
+            if (onClick is not null)
+                button.Click += (_, _) => onClick();
+            PluginToolbarPanel.Children.Add(button);
+        }
+        if (ctx.Buttons.Count > 0)
+            Logger.Debug($"工具栏已加载 {ctx.Buttons.Count} 个插件按钮。");
     }
 
     // ------------------------------------------------------------------

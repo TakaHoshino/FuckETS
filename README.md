@@ -69,9 +69,9 @@ dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
 试题格式解析已从主程序剥离为**插件**，主程序只负责宿主与编排：
 
 - **解析插件**（`IParserPlugin`）：实现特定地区/实体的 Part 识别与答案解析。内置「广东高中」解析插件随程序分发（内置插件不可移除，但可禁用）；主界面下拉框可切换所有启用的解析插件。
-- **行为插件**（`IBehaviorPlugin`）：通过钩子（Hook）干预扫描、解析、展示、PDF 导出等流程，钩子间按优先级链执行，单个插件异常被隔离记录，不会中断主流程。
+- **行为插件**（`IBehaviorPlugin`）：通过钩子（Hook）干预扫描、解析、展示、PDF 导出等流程（也支持向主界面工具栏注入按钮），钩子间按优先级链执行，单个插件异常被隔离记录，不会中断主流程。
 - **`.fep` 插件包**：zip 格式（`plugin.json` 清单 + 插件程序集），启动时自动扫描程序目录 `plugins\`，也可在「插件管理…」中加载/启停/移除；启用状态与所选解析插件持久化于 `%APPDATA%\FuckETS\plugins.json`。
-- SDK 类库：`FuckETS.PluginSdk`（插件仅依赖此 SDK）；示例插件：`examples/`（行为 + 解析各一）；打包脚本：`scripts\pack_fep.ps1`。
+- SDK 类库：`FuckETS.PluginSdk`（插件仅依赖此 SDK）；示例插件：`examples/`（行为 ×2、解析 ×1）；打包脚本：`scripts\pack_fep.ps1`。
 
 开发文档见 **[docs/PLUGIN_SDK.md](./docs/PLUGIN_SDK.md)**。
 
@@ -122,7 +122,7 @@ FuckETS
 │   ├── Context/         # ParseContext、HookNames、各钩子上下文
 │   ├── Models/          # PluginManifest / PluginInfo / 清单校验
 │   └── Packaging/       # .fep 打包与校验（FepPackager）
-├── examples/           # 示例插件（行为 HelloBehaviorPlugin / 解析 DemoParserPlugin）
+├── examples/           # 示例插件（行为 Hello/ToolbarDemo ×2、解析 DemoParser）
 ├── scripts/pack_fep.ps1# .fep 打包脚本
 ├── docs/PLUGIN_SDK.md  # 插件开发文档
 ├── AssemblyInfo.cs

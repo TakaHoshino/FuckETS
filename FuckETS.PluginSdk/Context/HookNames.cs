@@ -29,6 +29,9 @@ public static class HookNames
     /// <summary>文件夹列表加载后触发（FolderListContext）。</summary>
     public const string FolderListLoaded = "ui.folderList.loaded";
 
+    /// <summary>主界面工具栏扩展（MainWindowToolbarContext，插件可追加按钮；插件启停变更时会重新投递）。</summary>
+    public const string MainWindowToolbar = "ui.mainWindow.toolbar";
+
     /// <summary>解析结果展示前触发（ParseResultDisplayingContext，可修改展示行）。</summary>
     public const string ResultDisplaying = "ui.result.displaying";
 

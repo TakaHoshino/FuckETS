@@ -1,0 +1,11 @@
+{
+  "id": "example.toolbar-demo",
+  "name": "示例·工具栏插件",
+  "version": "1.0.0",
+  "author": "FuckETS 示例",
+  "type": "behavior",
+  "assembly": "ToolbarDemoPlugin.dll",
+  "entryType": "ToolbarDemoPlugin.ToolbarDemo",
+  "apiVersion": "1.0",
+  "description": "在主界面工具栏显示「示例插件」按钮，点击弹出标题为「示例插件」的信息框。"
+}

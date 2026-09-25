@@ -181,6 +181,7 @@ public sealed class PluginHost
             if (info.Enabled)
                 RegisterBehaviorHooks(info);
             Logger.Info($"插件加载成功：{info.DisplayName}（{fepPath}）。");
+            PluginsChanged?.Invoke(this, EventArgs.Empty);
             return info;
         }
         catch (Exception ex)
