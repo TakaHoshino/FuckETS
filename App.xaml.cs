@@ -1,4 +1,5 @@
 using System.Windows;
+using FuckETS.Plugins;
 using FuckETS.Services;
 
 namespace FuckETS;
@@ -32,6 +33,9 @@ public partial class App : Application
         // 最早阶段初始化日志记录器，使 OOBE 及后续全程均有日志。
         Logger.Initialize();
         Logger.Info($"应用启动。版本 {GetType().Assembly.GetName().Version}");
+
+        // 初始化插件宿主（内置解析插件 + 扫描 plugins 目录下的 .fep 外部插件）
+        PluginHost.EnsureInitialized();
 
         // 若 OOBE 已完成且校验通过，直接进入主界面（不启动扫描等业务逻辑）
         if (TryValidateAndRunMain())

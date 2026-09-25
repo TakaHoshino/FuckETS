@@ -1,0 +1,11 @@
+{
+  "id": "example.hello-behavior",
+  "name": "示例·行为插件",
+  "version": "1.0.0",
+  "author": "FuckETS 示例",
+  "type": "behavior",
+  "assembly": "HelloBehaviorPlugin.dll",
+  "entryType": "HelloBehaviorPlugin.HelloBehavior",
+  "apiVersion": "1.0",
+  "description": "演示钩子：解析完成时在输出末尾追加一行标记，用于验证插件钩子生效。"
+}

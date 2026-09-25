@@ -1,0 +1,12 @@
+{
+  "id": "example.demo-parser",
+  "name": "示例·解析插件",
+  "version": "1.0.0",
+  "author": "FuckETS 示例",
+  "type": "parser",
+  "region": "Demo-Region",
+  "assembly": "DemoParserPlugin.dll",
+  "entryType": "DemoParserPlugin.DemoParser",
+  "apiVersion": "1.0",
+  "description": "演示解析插件：把全部 content 目录识别为 PartA 并输出占位内容，用于验证解析插件选择与调度。"
+}

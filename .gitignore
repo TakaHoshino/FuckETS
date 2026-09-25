@@ -18,6 +18,7 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+*.fep
 
 # NuGet
 *.nupkg

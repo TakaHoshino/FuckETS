@@ -18,6 +18,12 @@
         <!-- 顶部工具栏 -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,5">
             <Button x:Name="ScanButton" Content="重新扫描" Padding="10,4" Margin="0,0,8,0" Click="ScanButton_Click"/>
+            <TextBlock Text="解析插件：" VerticalAlignment="Center" Margin="0,0,4,0"/>
+            <ComboBox x:Name="ParserComboBox" MinWidth="260" MaxWidth="360" VerticalAlignment="Center"
+                      DisplayMemberPath="DisplayName"
+                      SelectionChanged="ParserComboBox_SelectionChanged" Margin="0,0,8,0"/>
+            <Button x:Name="PluginManagerButton" Content="插件管理…" Padding="10,4" Margin="0,0,8,0"
+                    Click="PluginManagerButton_Click"/>
             <TextBlock x:Name="StatusLabel" Text="就绪" VerticalAlignment="Center" TextWrapping="Wrap"/>
         </StackPanel>
 

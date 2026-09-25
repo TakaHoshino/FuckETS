@@ -4,6 +4,10 @@ using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Media;
 using FuckETS.Models;
+using FuckETS.PluginSdk.Context;
+using FuckETS.PluginSdk.Context.Hooks;
+using FuckETS.PluginSdk.Models;
+using FuckETS.Plugins;
 using FuckETS.Services;
 
 namespace FuckETS;
@@ -17,13 +21,80 @@ public partial class MainWindow : Window
     private FolderItem? _selectedFolder;
     private string _currentOutput = string.Empty;
     private PdfExportOptions _pdfOptions = PdfExportOptions.Default();
+    private bool _updatingParserCombo;
 
     public MainWindow()
     {
         InitializeComponent();
         _pdfOptions = PdfSettingsService.Load();
+        PluginHost.EnsureInitialized();
+        PluginHost.Current.PluginsChanged += (_, _) => Dispatcher.Invoke(RefreshParserComboBox);
+        RefreshParserComboBox();
         Closed += (_, _) => Application.Current.Shutdown();
         Loaded += async (_, _) => await ScanFoldersAsync();
+    }
+
+    // ------------------------------------------------------------------
+    // 解析插件下拉框
+    // ------------------------------------------------------------------
+
+    /// <summary>刷新解析插件下拉框（仅列出启用的解析插件），并恢复/回退当前选择。</summary>
+    private void RefreshParserComboBox()
+    {
+        _updatingParserCombo = true;
+        try
+        {
+            var parsers = PluginHost.Current.GetEnabledParserPlugins();
+            ParserComboBox.ItemsSource = parsers;
+
+            var selected = PluginHost.Current.GetSelectedParser(out var fellBack);
+            if (fellBack)
+            {
+                Logger.Warn("原选中的解析插件已失效或被禁用，已回退到默认解析插件。");
+                BottomLabel.Text = "提示：原选中的解析插件已失效，已回退到默认解析插件";
+            }
+
+            ParserComboBox.SelectedItem = selected is null
+                ? null
+                : parsers.FirstOrDefault(p => p.Manifest.Id == selected.Manifest.Id);
+
+            if (parsers.Count == 0)
+            {
+                StatusLabel.Text = "没有可用的解析插件，无法解析";
+                Logger.Warn("没有可用的解析插件（内置插件被禁用且无外部解析插件）。");
+            }
+        }
+        finally
+        {
+            _updatingParserCombo = false;
+        }
+        UpdateParseButtonState();
+    }
+
+    private void ParserComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_updatingParserCombo)
+            return;
+        if (ParserComboBox.SelectedItem is PluginInfo info)
+        {
+            PluginHost.Current.SelectParser(info.Manifest.Id);
+            Logger.Debug($"解析插件切换为：{info.DisplayName}");
+        }
+        UpdateParseButtonState();
+    }
+
+    /// <summary>解析按钮可用 = 已选中文件夹 且 至少有一个启用的解析插件。</summary>
+    private void UpdateParseButtonState()
+        => ParseButton.IsEnabled = _selectedFolder is not null && ParserComboBox.SelectedItem is PluginInfo;
+
+    // ------------------------------------------------------------------
+    // 插件管理
+    // ------------------------------------------------------------------
+    private void PluginManagerButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new PluginManagerWindow { Owner = this };
+        dialog.ShowDialog();
+        RefreshParserComboBox();
     }
 
     // ------------------------------------------------------------------
@@ -80,10 +151,38 @@ public partial class MainWindow : Window
             BottomLabel.Text = "提示：未找到 ETS 日志目录，无法显示作业标题";
         }
 
+        // 扫描完成钩子：插件可增删/改写扫描到的文件夹信息
+        var scanCtx = new ScanCompletedContext();
+        foreach (var folder in folders)
+            scanCtx.Folders.Add(ToFolderInfo(folder));
+        PluginHost.Current.Publish(HookNames.ScanCompleted, scanCtx);
+        if (scanCtx.Folders.Count != folders.Count)
+        {
+            Logger.Warn($"扫描完成钩子修改了文件夹数量（{folders.Count} → {scanCtx.Folders.Count}），仅保留路径有效的条目。");
+            var rebuilt = scanCtx.Folders
+                .Where(i => !string.IsNullOrEmpty(i.Path) && Directory.Exists(i.Path))
+                .Select(i => new FolderItem(i.Name, i.Path, i.CreationTime) { HomeworkTitle = i.HomeworkTitle })
+                .ToList();
+            folders.Clear();
+            folders.AddRange(rebuilt);
+        }
+        else
+        {
+            for (int i = 0; i < folders.Count; i++)
+                folders[i].HomeworkTitle = scanCtx.Folders[i].HomeworkTitle;
+        }
+
         _folders.Clear();
         _folders.AddRange(folders);
         FolderGrid.ItemsSource = null;
         FolderGrid.ItemsSource = _folders;
+
+        // 文件夹列表加载后钩子（通知型）
+        var listCtx = new FolderListLoadedContext();
+        foreach (var folder in _folders)
+            listCtx.Folders.Add(ToFolderInfo(folder));
+        PluginHost.Current.Publish(HookNames.FolderListLoaded, listCtx);
+
         StatusLabel.Text = $"扫描完成，找到 {_folders.Count} 个文件夹";
         Logger.Info($"扫描完成，找到 {_folders.Count} 个作业文件夹。");
         ScanButton.IsEnabled = true;
@@ -95,10 +194,18 @@ public partial class MainWindow : Window
     private void FolderGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         _selectedFolder = FolderGrid.SelectedItem as FolderItem;
-        ParseButton.IsEnabled = _selectedFolder is not null;
+        UpdateParseButtonState();
         if (_selectedFolder is null)
             SavePdfButton.IsEnabled = false;
     }
+
+    private static FolderItemInfo ToFolderInfo(FolderItem folder) => new()
+    {
+        Name = folder.Name,
+        Path = folder.Path,
+        CreationTime = folder.CreationTime,
+        HomeworkTitle = folder.HomeworkTitle,
+    };
 
     // ------------------------------------------------------------------
     // 解析
@@ -129,76 +236,28 @@ public partial class MainWindow : Window
         Logger.Info($"解析完成，共 {outputLines.Count} 行输出。");
     }
 
-    /// <summary>解析文件夹：对每个 content_* 子目录动态识别 Part 并输出答案；仅返回保留的答案相关内容。</summary>
+    /// <summary>解析文件夹：调度当前选中的解析插件（含插件识别与钩子），返回保留的答案相关内容。</summary>
     private static List<string> ParseFolder(string folderPath)
     {
-        var outputLines = new List<string>();
-        var contentPattern = new Regex(@"^content_(\d+)$");
-        var matches = new List<(int Id, string DirPath)>();
-
-        try
+        var host = PluginHost.Current;
+        var parser = host.GetSelectedParser(out _);
+        if (parser is null)
         {
-            foreach (var dirPath in Directory.EnumerateDirectories(folderPath))
-            {
-                var m = contentPattern.Match(Path.GetFileName(dirPath));
-                if (m.Success)
-                    matches.Add((int.Parse(m.Groups[1].Value), dirPath));
-            }
+            Logger.Error("解析被阻止：没有可用的解析插件。");
+            return ["错误：没有可用的解析插件（请在插件管理中启用至少一个解析插件）"];
         }
-        catch (Exception ex)
-        {
-            outputLines.Add($"读取子文件夹出错：{ex.Message}");
-            return outputLines;
-        }
-
-        var candidates = new Dictionary<string, List<(int Id, string DirPath)>>();
-        foreach (var (id, dirPath) in matches)
-        {
-            var (part, _) = PartDetector.Detect(dirPath);
-            if (part is null)
-                continue;
-            if (!candidates.TryGetValue(part, out var list))
-            {
-                list = new List<(int, string)>();
-                candidates[part] = list;
-            }
-            list.Add((id, dirPath));
-        }
-        Logger.Debug($"解析：找到 {matches.Count} 个 content_* 子目录；识别结果 PartA={(candidates.TryGetValue(PartDetector.PartA, out var a) ? a.Count : 0)}，" +
-                     $"PartB={(candidates.TryGetValue(PartDetector.PartB, out var b) ? b.Count : 0)}，" +
-                     $"PartC={(candidates.TryGetValue(PartDetector.PartC, out var c) ? c.Count : 0)}。");
-
-        var chosen = new Dictionary<string, string>();
-        foreach (var part in new[] { PartDetector.PartA, PartDetector.PartB, PartDetector.PartC })
-        {
-            if (candidates.TryGetValue(part, out var list) && list.Count > 0)
-            {
-                list.Sort((a, b) => a.Id.CompareTo(b.Id));
-                chosen[part] = list[^1].DirPath;
-            }
-        }
-
-        foreach (var part in new[] { PartDetector.PartA, PartDetector.PartB, PartDetector.PartC })
-        {
-            if (chosen.TryGetValue(part, out var subfolder))
-            {
-                var jsonFile = Path.Combine(subfolder, "content.json");
-                EtsParser.Parse(jsonFile, outputLines, part);
-            }
-            else
-            {
-                outputLines.Add($"\n【{part}】 未找到对应的子文件夹");
-                Logger.Warn($"解析：未识别到 {part} 对应的子文件夹。");
-            }
-        }
-
-        return outputLines;
+        return host.RunParse(parser, folderPath);
     }
 
     private void DisplayResult(List<string> outputLines)
     {
+        // 展示前钩子：插件可改写要展示的行
+        var ctx = new ParseResultDisplayingContext();
+        ctx.OutputLines.AddRange(outputLines);
+        PluginHost.Current.Publish(HookNames.ResultDisplaying, ctx);
+
         ClearResult();
-        foreach (var line in outputLines)
+        foreach (var line in ctx.OutputLines)
         {
             AppOutputLine(line, LineClassifier.ClassifyLine(line));
         }
@@ -303,6 +362,20 @@ public partial class MainWindow : Window
         var filename = dialog.FileName;
         var output = _currentOutput;
         var options = _pdfOptions;
+
+        // PDF 导出前钩子：插件可改写导出内容、文件名与导出参数
+        var pdfCtx = new PdfExportingContext { OutputText = output, FileName = filename };
+        AddPdfOption(pdfCtx, "fontSize", options.FontSize);
+        AddPdfOption(pdfCtx, "titleFontSize", options.TitleFontSize);
+        AddPdfOption(pdfCtx, "partHeadingFontSize", options.PartHeadingFontSize);
+        AddPdfOption(pdfCtx, "marginMm", options.MarginMm);
+        AddPdfOption(pdfCtx, "lineHeight", options.LineHeight);
+        AddPdfOption(pdfCtx, "boldHeadings", options.BoldHeadings);
+        PluginHost.Current.Publish(HookNames.PdfExporting, pdfCtx);
+        output = pdfCtx.OutputText;
+        filename = pdfCtx.FileName;
+        ApplyPdfOptions(pdfCtx, options);
+
         SavePdfButton.IsEnabled = false;
         StatusLabel.Text = "正在生成 PDF...";
         Logger.Info($"开始生成 PDF：{filename}（正文字号={options.FontSize}，边距={options.MarginMm}mm）");
@@ -325,6 +398,34 @@ public partial class MainWindow : Window
         }
 
         SavePdfButton.IsEnabled = true;
+    }
+
+    /// <summary>追加一个 PDF 导出参数项。</summary>
+    private static void AddPdfOption(PdfExportingContext ctx, string key, object value)
+        => ctx.Options.Add(new PdfExportOption { Key = key, Value = value });
+
+    /// <summary>将钩子中被插件修改的 PDF 参数写回配置。</summary>
+    private static void ApplyPdfOptions(PdfExportingContext ctx, PdfExportOptions options)
+    {
+        foreach (var opt in ctx.Options)
+        {
+            try
+            {
+                switch (opt.Key)
+                {
+                    case "fontSize": options.FontSize = Convert.ToSingle(opt.Value); break;
+                    case "titleFontSize": options.TitleFontSize = Convert.ToSingle(opt.Value); break;
+                    case "partHeadingFontSize": options.PartHeadingFontSize = Convert.ToSingle(opt.Value); break;
+                    case "marginMm": options.MarginMm = Convert.ToSingle(opt.Value); break;
+                    case "lineHeight": options.LineHeight = Convert.ToSingle(opt.Value); break;
+                    case "boldHeadings": options.BoldHeadings = Convert.ToBoolean(opt.Value); break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"PDF 导出钩子参数 {opt.Key} 无效，已忽略：{ex.Message}");
+            }
+        }
     }
 
     /// <summary>净化字符串为合法文件名（替换非法字符为空）。</summary>

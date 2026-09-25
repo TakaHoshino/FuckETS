@@ -59,9 +59,21 @@ dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
 2. 启动应用，程序会自动扫描 `%APPDATA%\ETS\` 下所有纯数字命名的作业文件夹（并到 ETS 日志中解析作业标题）
    > 一般来说越新的文件夹代表越新的作业
 3. 选择所需的文件夹
-4. 点击「解析所选文件夹」即可输出答案（PartA 模仿朗读 / PartB 角色扮演 / PartC 故事复述，按 content.json 结构与特征自动识别 Part 归属）
-5. 点击「导出设置…」可自定义 PDF 的正文字号、标题字号、Part 标题字号、页边距、行间距及是否粗体标题，设置会持久化到 `%APPDATA%\FuckETS\settings.json`
-6. (可选) 点击「保存为 PDF」以生成答案的 PDF 文件，保存对话框会按作业标题（无则用文件夹编号）自动预填文件名，适于分享/手机阅读
+4. 在顶部「解析插件」下拉框选择解析器（默认内置广东高中解析，选择会持久化）
+5. 点击「解析所选文件夹」即可输出答案（PartA 模仿朗读 / PartB 角色扮演 / PartC 故事复述，按 content.json 结构与特征自动识别 Part 归属）
+6. 点击「导出设置…」可自定义 PDF 的正文字号、标题字号、Part 标题字号、页边距、行间距及是否粗体标题，设置会持久化到 `%APPDATA%\FuckETS\settings.json`
+7. (可选) 点击「保存为 PDF」以生成答案的 PDF 文件，保存对话框会按作业标题（无则用文件夹编号）自动预填文件名，适于分享/手机阅读
+
+## 插件系统
+
+试题格式解析已从主程序剥离为**插件**，主程序只负责宿主与编排：
+
+- **解析插件**（`IParserPlugin`）：实现特定地区/实体的 Part 识别与答案解析。内置「广东高中」解析插件随程序分发（内置插件不可移除，但可禁用）；主界面下拉框可切换所有启用的解析插件。
+- **行为插件**（`IBehaviorPlugin`）：通过钩子（Hook）干预扫描、解析、展示、PDF 导出等流程，钩子间按优先级链执行，单个插件异常被隔离记录，不会中断主流程。
+- **`.fep` 插件包**：zip 格式（`plugin.json` 清单 + 插件程序集），启动时自动扫描程序目录 `plugins\`，也可在「插件管理…」中加载/启停/移除；启用状态与所选解析插件持久化于 `%APPDATA%\FuckETS\plugins.json`。
+- SDK 类库：`FuckETS.PluginSdk`（插件仅依赖此 SDK）；示例插件：`examples/`（行为 + 解析各一）；打包脚本：`scripts\pack_fep.ps1`。
+
+开发文档见 **[docs/PLUGIN_SDK.md](./docs/PLUGIN_SDK.md)**。
 
 ## 日志
 
@@ -77,7 +89,7 @@ dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
 
 ## 注意事项
 
-- 本项目目前仅测试了**广东地区**的试题
+- 本项目目前仅测试了**广东地区**的试题（内置解析插件；其他地区可通过自定义解析插件接入，见 [docs/PLUGIN_SDK.md](./docs/PLUGIN_SDK.md)）
 - 本项目的文件部分使用了**AI生成**
 
 ## 项目结构
@@ -85,30 +97,42 @@ dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
 ```
 FuckETS
 ├── App.xaml            # 应用入口 (WPF)；启动时校验 OOBE 状态并路由主界面/向导
-├── App.xaml.cs
-├── MainWindow.xaml     # 主界面 (WPF)
-├── MainWindow.xaml.cs  # 主界面逻辑（UI 线程 / 后台任务）
+├── App.xaml.cs         # 启动时初始化日志与插件宿主（PluginHost）
+├── MainWindow.xaml     # 主界面 (WPF)，含解析插件下拉框
+├── MainWindow.xaml.cs  # 主界面逻辑（UI 线程 / 后台任务、钩子接入）
 ├── OobeWindow.xaml     # OOBE 初始设置向导窗口
 ├── OobeWindow.xaml.cs
 ├── PdfSettingsWindow.xaml     # PDF 导出设置弹窗
 ├── PdfSettingsWindow.xaml.cs
+├── PluginManagerWindow.xaml   # 插件管理窗口（查看/启停/加载/移除）
+├── PluginManagerWindow.xaml.cs
 ├── Pages/              # OOBE 各阶段页面
 │   ├── OobePageBase.cs           # OOBE 页面基类
 │   ├── OobeDisclaimerPage.xaml.cs   # 阶段1 免责声明（含倒计时）
 │   ├── OobeInstallSourcePage.xaml.cs# 阶段2 获取方式（自动/手动）
 │   ├── OobeLaunchEtsPage.xaml.cs    # 阶段3 等待并启动 E听说
 │   └── OobeCompletePage.xaml.cs     # 阶段4 完成
+├── Plugins/            # 插件宿主（不含具体试题格式解析）
+│   ├── PluginHost.cs               # 加载/启停/调度解析插件、钩子引擎、.fep 解包
+│   ├── BuiltInGuangdongPlugin.cs   # 内置「广东高中」解析插件（IParserPlugin）
+│   ├── PluginAssemblyLoadContext.cs# .fep 程序集隔离加载（可卸载）
+│   └── PluginSettingsService.cs    # 插件启用状态与所选解析器持久化
+├── FuckETS.PluginSdk/  # 插件 SDK 类库（插件仅依赖此 SDK）
+│   ├── Abstractions/    # IPlugin / IBehaviorPlugin / IParserPlugin / HookEventSink
+│   ├── Context/         # ParseContext、HookNames、各钩子上下文
+│   ├── Models/          # PluginManifest / PluginInfo / 清单校验
+│   └── Packaging/       # .fep 打包与校验（FepPackager）
+├── examples/           # 示例插件（行为 HelloBehaviorPlugin / 解析 DemoParserPlugin）
+├── scripts/pack_fep.ps1# .fep 打包脚本
+├── docs/PLUGIN_SDK.md  # 插件开发文档
 ├── AssemblyInfo.cs
 ├── FuckETS.csproj      # 项目文件 (.NET 8 + WPF)
 ├── Models/             # 数据模型
-│   ├── ContentData.cs      # content.json 结构映射
 │   ├── FolderItem.cs       # 作业文件夹条目
 │   ├── PdfExportOptions.cs # PDF 导出参数
 │   └── OobeSession.cs      # OOBE 会话共享状态
 └── Services/           # 业务服务
     ├── EtsScanner.cs          # 扫描 %APPDATA%\ETS\
-    ├── EtsParser.cs           # 解析 PartA/B/C 答案
-    ├── PartDetector.cs        # Part 类型识别（structure_type + 特征评分）
     ├── PdfService.cs          # 生成 PDF（QuestPDF，支持导出配置）
     ├── PdfSettingsService.cs  # PDF 设置持久化
     ├── HomeworkTitleService.cs# ETS 日志 → 作业标题
@@ -116,13 +140,13 @@ FuckETS
     ├── OobeStateService.cs    # OOBE 注册表持久化与校验
     ├── Logger.cs              # 文件日志记录器
     ├── LineClassifier.cs      # 行分类与样式映射
-    ├── TextHelper.cs          # HTML 剥离与段落处理
     └── SystemHelper.cs        # 字体查找 / 创建时间
 ```
 
 ## 技术栈
 
 - **语言 / 框架**：C# / .NET 8 / WPF
+- **插件系统**：`FuckETS.PluginSdk` 契约类库 + `.fep`（zip）插件包 + 钩子引擎
 - **PDF 生成**：QuestPDF（MIT 许可，无 COM 依赖）
 - **PDF 设置持久化**：JSON（`%APPDATA%\FuckETS\settings.json`）
 - **OOBE 状态持久化**：注册表（`HKCU\Software\FuckETS`）

@@ -12,10 +12,13 @@
     <!-- 仅面向 Windows x64，裁剪掉 QuestPDF 带来的 Linux/macOS 等非目标运行时原生库 -->
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
+    <!-- 嵌套的 PluginSdk 类库与示例插件不要被主项目默认通配符包含 -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);FuckETS.PluginSdk\**;examples\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="QuestPDF" Version="2024.12.3" />
+    <ProjectReference Include="FuckETS.PluginSdk\FuckETS.PluginSdk.csproj" />
   </ItemGroup>
 
 </Project>
