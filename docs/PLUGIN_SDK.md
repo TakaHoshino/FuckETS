@@ -36,6 +36,8 @@ FuckETS 通过插件体系支持多地区/多实体的试题格式与功能扩�
 scripts\pack_fep.ps1 -ProjectDir path\to\YourPlugin
 ```
 
+> 位于 `examples\` 下的插件项目无需手动执行：构建时会通过 `examples\Directory.Build.targets` 自动打包 `.fep` 到项目自身输出目录 `bin\<Config>\net8.0\`。
+
 4. 主界面「插件管理…」→「加载 .fep 插件…」安装；或把 `.fep` 放入程序目录 `plugins\` 后重启。
 5. 解析插件还会出现在主界面「解析插件」下拉框中供切换。
 

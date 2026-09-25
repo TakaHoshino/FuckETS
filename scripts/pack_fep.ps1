@@ -1,9 +1,10 @@
 ﻿# 打包 .fep 插件包
-# 用法：scripts\pack_fep.ps1 -ProjectDir examples\HelloBehaviorPlugin [-Configuration Release] [-OutputDir <dir>]
+# 用法：scripts\pack_fep.ps1 -ProjectDir examples\HelloBehaviorPlugin [-Configuration Release] [-OutputDir <dir>] [-NoBuild]
 param(
     [Parameter(Mandatory = $true)][string]$ProjectDir,
     [string]$Configuration = "Release",
-    [string]$OutputDir = ""
+    [string]$OutputDir = "",
+    [switch]$NoBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -12,9 +13,11 @@ $projectDir = (Resolve-Path -LiteralPath $ProjectDir).Path
 $csproj = Get-ChildItem -Path $projectDir -Filter *.csproj | Select-Object -First 1
 if ($null -eq $csproj) { throw "未找到 .csproj：$projectDir" }
 
-Write-Host "构建 $($csproj.Name)（$Configuration）..."
-dotnet build $csproj.FullName -c $Configuration | Out-Host
-if ($LASTEXITCODE -ne 0) { throw "构建失败" }
+if (-not $NoBuild) {
+    Write-Host "构建 $($csproj.Name)（$Configuration）..."
+    dotnet build $csproj.FullName -c $Configuration | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw "构建失败" }
+}
 
 # 插件输出目录（含 plugin.json 与程序集）
 $outDir = Join-Path (Join-Path $projectDir "bin") (Join-Path $Configuration "net8.0")
