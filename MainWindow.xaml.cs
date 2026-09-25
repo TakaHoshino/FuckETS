@@ -36,7 +36,11 @@ public partial class MainWindow : Window
         RefreshParserComboBox();
         BuildPluginToolbar();
         Closed += (_, _) => Application.Current.Shutdown();
-        Loaded += async (_, _) => await ScanFoldersAsync();
+        Loaded += async (_, _) =>
+        {
+            _ = CheckUpdateOnStartupAsync();
+            await ScanFoldersAsync();
+        };
     }
 
     // ------------------------------------------------------------------
@@ -100,6 +104,46 @@ public partial class MainWindow : Window
         var dialog = new PluginManagerWindow { Owner = this };
         dialog.ShowDialog();
         RefreshParserComboBox();
+    }
+
+    // ------------------------------------------------------------------
+    // 设置与检查更新
+    // ------------------------------------------------------------------
+    private void AppSettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new SettingsWindow { Owner = this };
+        dialog.ShowDialog();
+    }
+
+    /// <summary>启动时（若开启）延迟检查 GitHub 更新，发现新版本弹窗询问是否更新。失败仅记日志。</summary>
+    private async Task CheckUpdateOnStartupAsync()
+    {
+        try
+        {
+            var settings = UpdateSettingsService.Load();
+            if (!settings.CheckOnStartup)
+                return;
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            var result = await UpdateService.CheckAsync();
+            if (!result.UpdateAvailable)
+                return;
+
+            Logger.Info($"发现新版本 {result.LatestTag}（当前 {UpdateService.GetCurrentTag()}），询问用户是否更新。");
+            var prompt = new UpdatePromptWindow(result) { Owner = this };
+            if (prompt.ShowDialog() != true)
+            {
+                Logger.Debug("用户暂不更新。");
+                return;
+            }
+
+            var win = new UpdateWindow(result.LatestTag, prompt.SelectedKind) { Owner = this };
+            win.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"检查更新失败：{ex.Message}");
+        }
     }
 
     /// <summary>投递 ui.mainWindow.toolbar 钩子，把插件贡献的按钮实例化到主界面工具栏。</summary>

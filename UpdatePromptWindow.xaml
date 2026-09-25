@@ -1,0 +1,42 @@
+<Window x:Class="FuckETS.UpdatePromptWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="检查更新" Width="470" SizeToContent="Height"
+        ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="16">
+
+        <TextBlock x:Name="SummaryText" FontWeight="Bold" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+        <TextBlock Text="选择要下载的版本（两者的区别在于是否内置 .NET 运行时）：" TextWrapping="Wrap" Margin="0,0,0,6"/>
+
+        <RadioButton x:Name="SelfContainedRadio" GroupName="AssetKind" Margin="0,4,0,0" HorizontalContentAlignment="Left">
+            <StackPanel Margin="4,0,0,0">
+                <TextBlock TextWrapping="Wrap">
+                    <Run Text="自包含版（推荐）"/>
+                    <Run x:Name="ScSizeText" Text=""/>
+                </TextBlock>
+                <TextBlock Text="已内置 .NET 8 运行时，无需安装任何环境，解压后直接运行；体积较大。"
+                           FontSize="11" Foreground="Gray" TextWrapping="Wrap" Margin="0,2,0,0"/>
+            </StackPanel>
+        </RadioButton>
+
+        <RadioButton x:Name="FrameworkRadio" GroupName="AssetKind" Margin="0,8,0,0" HorizontalContentAlignment="Left">
+            <StackPanel Margin="4,0,0,0">
+                <TextBlock TextWrapping="Wrap">
+                    <Run Text="框架依赖版"/>
+                    <Run x:Name="FdSizeText" Text=""/>
+                </TextBlock>
+                <TextBlock Text="体积较小，但需目标机器已安装 .NET 8 桌面运行时（Desktop Runtime），未安装将无法启动。"
+                           FontSize="11" Foreground="Gray" TextWrapping="Wrap" Margin="0,2,0,0"/>
+            </StackPanel>
+        </RadioButton>
+
+        <TextBlock x:Name="InstallTypeHint" FontSize="11" Foreground="Gray" TextWrapping="Wrap" Margin="0,10,0,0"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button x:Name="UpdateButton" Content="开始更新" Width="90" Margin="0,0,8,0"
+                    IsDefault="True" Click="UpdateButton_Click"/>
+            <Button x:Name="LaterButton" Content="暂不" Width="90" IsCancel="True"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

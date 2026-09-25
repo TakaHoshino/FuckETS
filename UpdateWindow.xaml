@@ -1,0 +1,14 @@
+<Window x:Class="FuckETS.UpdateWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="正在更新" Width="420" SizeToContent="Height"
+        ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="16">
+        <TextBlock x:Name="StatusText" Text="正在准备下载…" TextWrapping="Wrap" Margin="0,0,0,8"/>
+        <ProgressBar x:Name="DownloadBar" Height="16" IsIndeterminate="True" Margin="0,0,0,6"/>
+        <TextBlock x:Name="ProgressText" FontSize="11" Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,12"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="CancelButton" Content="取消" Width="80" Click="CancelButton_Click"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

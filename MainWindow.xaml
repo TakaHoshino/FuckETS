@@ -24,6 +24,8 @@
                       SelectionChanged="ParserComboBox_SelectionChanged" Margin="0,0,8,0"/>
             <Button x:Name="PluginManagerButton" Content="插件管理…" Padding="10,4" Margin="0,0,8,0"
                     Click="PluginManagerButton_Click"/>
+            <Button x:Name="AppSettingsButton" Content="设置…" Padding="10,4" Margin="0,0,8,0"
+                    Click="AppSettingsButton_Click"/>
             <!-- 插件贡献的工具栏按钮（ui.mainWindow.toolbar 钩子） -->
             <StackPanel x:Name="PluginToolbarPanel" Orientation="Horizontal"/>
             <TextBlock x:Name="StatusLabel" Text="就绪" VerticalAlignment="Center" TextWrapping="Wrap"/>
