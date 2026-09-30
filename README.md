@@ -1,167 +1,110 @@
-# FuckETS - 去他妈的讯飞E听说
+# FuckETS
 
-讯飞E听说**高中**版试题答案获取
+> 去他妈的讯飞 E 听说 —— 讯飞「E听说」高中版英语试题**参考答案提取工具**
 
-## 简介
+![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)
+![Platform](https://img.shields.io/badge/platform-Windows%20x64-0078D6?logo=windows&logoColor=white)
+![License](https://img.shields.io/github/license/TakaHoshino/FuckETS)
+![Release](https://img.shields.io/github/v/release/TakaHoshino/FuckETS)
 
-FuckETS 是一个 Windows 桌面工具，用于提取讯飞「E听说」高中版英语试题的参考答案。使用 **C# / .NET 8 + WPF** 开发。
+## 这是什么
 
-首次启动会进入 **OOBE（出厂初始设置向导）**，完成免责声明同意、选择 E听说 安装目录获取方式等初始设置后，才进入主界面。
+**FuckETS** 是一个 Windows 桌面小工具，用来把你已经在电脑版「E听说」上下载过的英语试题，快速解析出参考答案。
 
-## 环境要求
+它不破解、不联网获取题目，而是直接读取 E听说保存在本机 `%APPDATA%\ETS\` 里的试题数据，还原出 **PartA 模仿朗读 / PartB 角色扮演 / PartC 故事复述** 的答案，并支持一键导出成适合手机阅读和分享的 PDF。
 
-- Windows 10 / 11
-- .NET 8 SDK（或更新 LTS）
-- `%APPDATA%\ETS\` 目录下存在 E听说下载的试题数据
+**为什么会有这个项目**：E听说 客户端只能在线做题、不能方便地查看答案，手机上复习也不方便。FuckETS 把本机已下载的题目解析出来，给你一份干净、可导出、可存档的答案。
 
-## 构建与运行
-
-项目已在 `FuckETS.csproj` 中设定 `RuntimeIdentifier=win-x64` 且 `SelfContained=false`（框架依赖、不打包 .NET 运行时），因此构建只保留 Windows x64 所需文件，裁剪掉 QuestPDF 带来的 Linux/macOS 等无关运行时原生库。
-
-```bash
-# 还原并构建
-dotnet build
-
-# 运行应用
-dotnet run
-```
-
-构建产物位于 `bin\Debug\net8.0-windows\win-x64\` 或 `bin\Release\net8.0-windows\win-x64\`。
-
-## 发布
-
-Windows x64 框架依赖发布（需目标机器安装 .NET 8 桌面运行时）：
-
-```bash
-dotnet publish -c Release -r win-x64
-```
-
-如需生成无需安装 .NET 运行时的自包含单文件包（体积更大），可显式覆盖：
-
-```bash
-dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
-```
-
-## 首次启动（OOBE）
-
-应用启动时会校验注册表 `HKCU\Software\FuckETS` 中的 OOBE 状态；未完成或任一配置项缺失/损坏/非法时，自动进入向导。向导分以下阶段：
-
-1. **免责声明**：阅读并同意（按钮需等待 5 秒倒计时后方可点击），同意前无法进入下一步
-2. **选择获取 E听说 安装目录的方式**：自动获取 / 手动输入（可浏览选择，手动路径需有效）
-3. **等待并启动 E听说**（仅自动获取时）：检测到 E听说 进程运行后自动推导安装目录
-4. **完成**：将 OOBE 完成状态、免责声明同意情况与安装目录写入注册表
-
-中途退出后，再次启动可从已完成阶段继续。注册表任一项缺失、损坏、类型不匹配、或值非法时，会重新进入 OOBE。
-
-## 使用方法
-
-1. 首先，在电脑版的 E听说上下载要解析的试题
-2. 启动应用，程序会自动扫描 `%APPDATA%\ETS\` 下所有纯数字命名的作业文件夹（并到 ETS 日志中解析作业标题）
-   > 一般来说越新的文件夹代表越新的作业
-3. 选择所需的文件夹
-4. 在顶部「解析插件」下拉框选择解析器（默认内置广东高中解析，选择会持久化）
-5. 点击「解析所选文件夹」即可输出答案（PartA 模仿朗读 / PartB 角色扮演 / PartC 故事复述，按 content.json 结构与特征自动识别 Part 归属）
-6. 点击「导出设置…」可自定义 PDF 的正文字号、标题字号、Part 标题字号、页边距、行间距及是否粗体标题，设置会持久化到 `%APPDATA%\FuckETS\settings.json`
-7. (可选) 点击「保存为 PDF」以生成答案的 PDF 文件，保存对话框会按作业标题（无则用文件夹编号）自动预填文件名，适于分享/手机阅读
-
-## 检查更新
-
-- 应用启动后会自动查询 GitHub Releases 检查新版本（可在「设置… → 启动时检查更新」中关闭）；也可在设置窗口点击「立即检查」手动检查
-- 发现新版本时弹出询问窗口，可选择两种安装包：
-  - **自包含版（推荐）**：已内置 .NET 8 运行时，无需安装任何环境，解压即用，体积较大
-  - **框架依赖版**：体积较小，但需目标机器已安装 .NET 8 桌面运行时（Desktop Runtime）
-- 默认选中与当前安装一致的类型，确认后按所选下载源（GitHub 官方 / gh-proxy 镜像）下载，可随时取消；下载完成会自动解压覆盖并重启应用
-- 更新设置持久化在 `%APPDATA%\FuckETS\update.json`
-
-## 插件系统
-
-试题格式解析已从主程序剥离为**插件**，主程序只负责宿主与编排：
-
-- **解析插件**（`IParserPlugin`）：实现特定地区/实体的 Part 识别与答案解析。内置「广东高中」解析插件随程序分发（内置插件不可移除，但可禁用）；主界面下拉框可切换所有启用的解析插件。
-- **行为插件**（`IBehaviorPlugin`）：通过钩子（Hook）干预扫描、解析、展示、PDF 导出等流程（也支持向主界面工具栏注入按钮），钩子间按优先级链执行，单个插件异常被隔离记录，不会中断主流程。
-- **`.fep` 插件包**：zip 格式（`plugin.json` 清单 + 插件程序集），启动时自动扫描程序目录 `plugins\`，也可在「插件管理…」中加载/启停/移除；启用状态与所选解析插件持久化于 `%APPDATA%\FuckETS\plugins.json`。
-- SDK 类库：`FuckETS.PluginSdk`（插件仅依赖此 SDK）；示例插件：`examples/`（行为 ×2、解析 ×1）；打包脚本：`scripts\pack_fep.ps1`。
-
-开发文档见 **[docs/PLUGIN_SDK.md](./docs/PLUGIN_SDK.md)**。
-
-## 日志
-
-应用启动时（含 OOBE 阶段）即开始记录日志，写入 `%APPDATA%\FuckETS\logs\app_yyyyMMdd.log`（按日分文件）。
-
-- 记录应用启动/退出、OOBE 各阶段（免责声明、获取方式、等待 E听说、完成）、作业扫描、试题解析、Part 识别、PDF 导出等关键流程
-- 出现异常时记录错误及堆栈，便于定位问题
-- 线程安全，写入失败不影响应用运行
+> 本项目目前主要针对**广东地区高中版**试题；其他地区可通过**插件**接入（见下文「插件系统」）。
 
 ## 软件截图
 
 ![Screenshot](./Screenshots/Screenshot_1.png)
 
+## 功能特性
+
+- **自动扫描作业**：一键扫描 `%APPDATA%\ETS\` 下所有作业文件夹，并解析 ETS 客户端日志还原**作业标题**（越新的文件夹代表越新的作业）。
+- **自动识别题型**：根据试题数据的 `structure_type` 字段与内容特征，自动判定每个子目录属于 PartA / PartB / PartC。
+- **清晰的结果展示**：Part 标题、问题、候选答案分级着色，一眼看清。
+- **优雅的 PDF 导出**：基于 QuestPDF 生成 A4 文档，正文用时代罗马体（中文自动回退），标题/问题/答案分类排版；导出前可自定义字号、页边距、行距等（设置持久化）。
+- **首次启动向导（OOBE）**：免责声明、自动/手动获取 E听说安装目录，全程引导，未完成配置时无法进入主界面。
+- **插件系统**：试题解析与功能扩展均可用插件实现——解析插件适配不同地区，行为插件通过钩子干预扫描、解析、展示、导出流程，甚至向主界面注入按钮。
+- **自动检查更新**：启动时检查 GitHub Releases，支持自包含版 / 框架依赖版两种安装包，以及官方 / gh-proxy 两种下载源，一键下载覆盖重启。
+- **完整日志**：从启动（含 OOBE）到解析、导出全程记录异常与堆栈，方便排查。
+
+## 使用流程
+
+1. 在电脑版 **E听说** 上下载要解析的试题。
+2. 启动 FuckETS，程序自动扫描本地作业文件夹，并尝试从日志还原作业标题。
+3. 在列表中选中目标作业（一般越新越靠下）。
+4. 在顶部「解析插件」下拉框选择解析器（默认内置**广东高中**解析）。
+5. 点击「**解析所选文件夹**」，查看答案。
+6. 可选：点击「保存为 PDF」导出答案，文件名会按作业标题（无则用文件夹编号）自动预填。
+7. 可选：点击「导出设置…」调整 PDF 样式。
+
+## 插件系统
+
+试题解析已从主程序**完全剥离为插件**，主程序只负责宿主与编排。插件分两类：
+
+| 类型 | 接口 | 作用 |
+| --- | --- | --- |
+| **解析插件** | `IParserPlugin` | 适配特定地区/实体的题型识别与答案解析 |
+| **行为插件** | `IBehaviorPlugin` | 通过钩子干预扫描、解析、展示、PDF 导出等流程，或注入界面按钮 |
+
+- 插件契约位于 **`FuckETS.PluginSdk`**，插件**只依赖 SDK、不引用主程序内部类型**。
+- 打包为 `.fep`（zip：`plugin.json` 清单 + 插件程序集），可放入程序目录 `plugins\` 或在「插件管理…」中加载/启停/移除。
+- 内置「广东高中」解析插件随程序分发（不可移除，可禁用）。
+- 提供 10 个钩子点（`scan.completed`、`part.detect.*`、`part.parse.*`、`parse.completed`、`ui.*`），按优先级链执行，单个插件异常被隔离，不影响主流程。
+
+**开发文档见 [docs/PLUGIN_SDK.md](./docs/PLUGIN_SDK.md)**；示例插件见 `examples/`（行为 ×2、解析 ×1）。
+
+## 获取与运行
+
+**方式一：下载安装包**（推荐普通用户）
+
+前往 [Releases](https://github.com/TakaHoshino/FuckETS/releases) 下载：
+
+- **自包含版**：已内置 .NET 8 运行时，无需安装环境，解压即用，体积较大；
+- **框架依赖版**：体积较小，需机器已安装 [.NET 8 桌面运行时](https://dotnet.microsoft.com/download/dotnet/8.0)。
+
+**方式二：从源码构建**（开发者）
+
+需 Windows 10/11 + .NET 8 SDK：
+
+```bash
+dotnet build
+dotnet run
+```
+
+发布：
+
+```bash
+# 框架依赖
+dotnet publish -c Release -r win-x64
+
+# 自包含单文件
+dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
+```
+
+> 项目已设 `RuntimeIdentifier=win-x64` 且 `SelfContained=false`，构建只保留 Windows x64 所需文件。
+
 ## 注意事项
 
-- 本项目目前仅测试了**广东地区**的试题（内置解析插件；其他地区可通过自定义解析插件接入，见 [docs/PLUGIN_SDK.md](./docs/PLUGIN_SDK.md)）
-- 本项目的文件部分使用了**AI生成**
-
-## 项目结构
-
-```
-FuckETS
-├── App.xaml            # 应用入口 (WPF)；启动时校验 OOBE 状态并路由主界面/向导
-├── App.xaml.cs         # 启动时初始化日志与插件宿主（PluginHost）
-├── MainWindow.xaml     # 主界面 (WPF)，含解析插件下拉框
-├── MainWindow.xaml.cs  # 主界面逻辑（UI 线程 / 后台任务、钩子接入）
-├── OobeWindow.xaml     # OOBE 初始设置向导窗口
-├── OobeWindow.xaml.cs
-├── PdfSettingsWindow.xaml     # PDF 导出设置弹窗
-├── PdfSettingsWindow.xaml.cs
-├── PluginManagerWindow.xaml   # 插件管理窗口（查看/启停/加载/移除）
-├── PluginManagerWindow.xaml.cs
-├── Pages/              # OOBE 各阶段页面
-│   ├── OobePageBase.cs           # OOBE 页面基类
-│   ├── OobeDisclaimerPage.xaml.cs   # 阶段1 免责声明（含倒计时）
-│   ├── OobeInstallSourcePage.xaml.cs# 阶段2 获取方式（自动/手动）
-│   ├── OobeLaunchEtsPage.xaml.cs    # 阶段3 等待并启动 E听说
-│   └── OobeCompletePage.xaml.cs     # 阶段4 完成
-├── Plugins/            # 插件宿主（不含具体试题格式解析）
-│   ├── PluginHost.cs               # 加载/启停/调度解析插件、钩子引擎、.fep 解包
-│   ├── BuiltInGuangdongPlugin.cs   # 内置「广东高中」解析插件（IParserPlugin）
-│   ├── PluginAssemblyLoadContext.cs# .fep 程序集隔离加载（可卸载）
-│   └── PluginSettingsService.cs    # 插件启用状态与所选解析器持久化
-├── FuckETS.PluginSdk/  # 插件 SDK 类库（插件仅依赖此 SDK）
-│   ├── Abstractions/    # IPlugin / IBehaviorPlugin / IParserPlugin / HookEventSink
-│   ├── Context/         # ParseContext、HookNames、各钩子上下文
-│   ├── Models/          # PluginManifest / PluginInfo / 清单校验
-│   └── Packaging/       # .fep 打包与校验（FepPackager）
-├── examples/           # 示例插件（行为 Hello/ToolbarDemo ×2、解析 DemoParser）
-├── scripts/pack_fep.ps1# .fep 打包脚本
-├── docs/PLUGIN_SDK.md  # 插件开发文档
-├── AssemblyInfo.cs
-├── FuckETS.csproj      # 项目文件 (.NET 8 + WPF)
-├── Models/             # 数据模型
-│   ├── FolderItem.cs       # 作业文件夹条目
-│   ├── PdfExportOptions.cs # PDF 导出参数
-│   └── OobeSession.cs      # OOBE 会话共享状态
-└── Services/           # 业务服务
-    ├── EtsScanner.cs          # 扫描 %APPDATA%\ETS\
-    ├── PdfService.cs          # 生成 PDF（QuestPDF，支持导出配置）
-    ├── PdfSettingsService.cs  # PDF 设置持久化
-    ├── HomeworkTitleService.cs# ETS 日志 → 作业标题
-    ├── EtsInstallService.cs   # ETS 进程检测与安装目录推导
-    ├── OobeStateService.cs    # OOBE 注册表持久化与校验
-    ├── Logger.cs              # 文件日志记录器
-    ├── LineClassifier.cs      # 行分类与样式映射
-    └── SystemHelper.cs        # 字体查找 / 创建时间
-```
+- 使用前请确保本机 `%APPDATA%\ETS\` 下已存在 E听说 下载的试题数据。
+- OOBE 需要指定 E听说 安装目录；可自动从运行中的 E听说 进程推导，也可手动选择。
+- 本项目目前**仅测试了广东地区**试题；其他地区欢迎通过插件适配。
+- 请仅用于个人学习与研究，遵守当地法律与学校规定（详见软件内免责声明）。
+- 本项目的部分文件使用了 **AI 生成**。
 
 ## 技术栈
 
 - **语言 / 框架**：C# / .NET 8 / WPF
-- **插件系统**：`FuckETS.PluginSdk` 契约类库 + `.fep`（zip）插件包 + 钩子引擎
-- **PDF 生成**：QuestPDF（MIT 许可，无 COM 依赖）
-- **PDF 设置持久化**：JSON（`%APPDATA%\FuckETS\settings.json`）
-- **OOBE 状态持久化**：注册表（`HKCU\Software\FuckETS`）
-- **日志**：文件日志（`%APPDATA%\FuckETS\logs\`）
+- **插件系统**：`FuckETS.PluginSdk` 契约类库 + `.fep` 插件包 + 钩子引擎 + 可卸载 `AssemblyLoadContext`
+- **PDF 生成**：QuestPDF（MIT，无 COM 依赖）
+- **持久化**：OOBE → 注册表 `HKCU\Software\FuckETS`；设置/插件/更新 → `%APPDATA%\FuckETS\*.json`
+- **日志**：`%APPDATA%\FuckETS\logs\app_yyyyMMdd.log`
 - **异步**：async/await 后台任务，UI 线程不阻塞
 
 ## 许可
 
-MIT License
+[MIT License](./LICENSE)
