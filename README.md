@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> 本 `main` 分支已**弃用**，不再接收更新。
+> 请切换到活跃分支 **[`refactoring`](https://github.com/TakaHoshino/FuckETS/tree/refactoring)** 获取最新代码与文档。
+
 # FuckETS - 去他妈的讯飞E听说
 
 讯飞E听说**高中**版试题答案获取
