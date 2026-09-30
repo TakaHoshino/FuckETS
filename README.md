@@ -19,7 +19,7 @@
 
 ## 软件截图
 
-![Screenshot](./Screenshots/Screenshot_1.png)
+![Screenshot](./Screenshots/Screenshot.png)
 
 ## 功能特性
 
